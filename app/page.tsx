@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect } from "react";
+import { Task } from "@/lib/types";
 import PomodoroTimer from "@/components/PomodoroTimer";
 import TaskList from "@/components/TaskList";
 import Notes from "@/components/Notes"; // ✅ Add Notes.tsx
 
 interface Task {
-  id: number;
+  id: string;
   text: string;
   completed: boolean;
 }
@@ -47,7 +48,7 @@ export default function Home() {
 
           {/* Task List (Pass both handlers) */}
           <div className="bg-gray-800 p-4 rounded">
-            <TaskList onTaskSelect={setSelectedTask} onTaskAdd={addTask} />
+            <TaskList onTaskSelect={(task: Task) => setSelectedTask(task)} onTaskAdd={addTask} /> 
           </div>
         </div>
       </div>

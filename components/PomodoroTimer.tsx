@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 interface Task {
-  id: number;
+  id: string;
   text: string;
   completed: boolean;
 }
