@@ -1,8 +1,8 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PomodoroTimer from "@/components/PomodoroTimer";
 import TaskList from "@/components/TaskList";
+import Notes from "@/components/Notes"; // ✅ Add Notes.tsx
 
 interface Task {
   id: number;
@@ -12,12 +12,15 @@ interface Task {
 
 export default function Home() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [tasks, setTasks] = useState<Task[]>(() => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // ✅ Fix: Load tasks inside `useEffect` to prevent hydration issues
+  useEffect(() => {
     if (typeof window !== "undefined") {
-      return JSON.parse(localStorage.getItem("tasks") || "[]");
+      const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+      setTasks(savedTasks);
     }
-    return [];
-  });
+  }, []);
 
   const addTask = (newTask: Task) => {
     const updatedTasks = [...tasks, newTask];
@@ -30,19 +33,21 @@ export default function Home() {
       <h1 className="text-2xl font-bold mb-6">🚀 Pomodoro Productivity App</h1>
 
       <div className="grid grid-cols-12 gap-6 w-full max-w-7xl">
-        {/* Notes Section */}
-        <div className="bg-gray-800 p-4 rounded col-span-8">Notes Placeholder</div>
+        {/* ✅ Fix: Include Notes component */}
+        <div className="bg-gray-800 p-4 rounded col-span-8">
+          <Notes />
+        </div>
 
         {/* Pomodoro & Tasks Section */}
         <div className="col-span-4 flex flex-col gap-6">
-          {/* ✅ Pass `selectedTask` to PomodoroTimer */}
+          {/* Pomodoro Timer */}
           <div className="bg-gray-800 p-4 rounded">
             <PomodoroTimer selectedTask={selectedTask} />
           </div>
 
-          {/* ✅ Allow TaskList to update selectedTask */}
+          {/* Task List (Pass both handlers) */}
           <div className="bg-gray-800 p-4 rounded">
-            <TaskList onTaskSelect={setSelectedTask} />
+            <TaskList onTaskSelect={setSelectedTask} onTaskAdd={addTask} />
           </div>
         </div>
       </div>
