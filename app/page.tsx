@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import PomodoroTimer from "@/components/PomodoroTimer";
 import TaskList from "@/components/TaskList";
