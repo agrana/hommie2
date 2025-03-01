@@ -1,14 +1,22 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
+import js from "@eslint/js";
+import next from "eslint-plugin-next"; // ✅ Fix: Correctly import Next.js ESLint plugin
+import react from "eslint-plugin-react";
 
-
-/** @type {import('eslint').Linter.Config[]} */
 export default [
-  {files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"]},
-  {languageOptions: { globals: globals.browser }},
-  pluginJs.configs.recommended,
-  ...tseslint.configs.recommended,
-  pluginReact.configs.flat.recommended,
+  js.configs.recommended,
+  {
+    plugins: {
+      next, // ✅ Fix: Ensures Next.js plugin is correctly applied
+      react,
+    },
+    extends: ["plugin:next/recommended"], // ✅ Fix: Ensures Next.js ESLint rules are applied
+    settings: {
+      react: {
+        version: "detect", // ✅ Fixes "React version not specified" warning
+      },
+    },
+    rules: {
+      "react/react-in-jsx-scope": "off", // ✅ Next.js 15+ does not require React in scope
+    },
+  },
 ];
