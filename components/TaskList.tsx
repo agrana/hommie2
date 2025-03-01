@@ -1,46 +1,42 @@
 "use client";
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase"; // ✅ Import Supabase client
 
 interface Task {
-  id: number;
+  id: string;
   text: string;
   completed: boolean;
 }
 
-interface TaskListProps {
-  onTaskSelect: (task: Task) => void;
-  onTaskAdd: (task: Task) => void;
-}
-
-export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) {
+export default function TaskList({ onTaskSelect }: { onTaskSelect: (task: Task) => void }) {
   const [taskInput, setTaskInput] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
 
-  // Load saved tasks on mount
+  // ✅ Fetch tasks from Supabase on mount
   useEffect(() => {
-    const savedTasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-    setTasks(savedTasks);
+    async function fetchTasks() {
+      const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+      if (!error) setTasks(data || []);
+    }
+    fetchTasks();
   }, []);
 
-  // Function to add a new task
-  const addTask = () => {
+  // ✅ Add a new task and update UI immediately
+  const addTask = async () => {
     if (!taskInput.trim()) return;
 
-    const newTask: Task = { id: Date.now(), text: taskInput, completed: false };
-    const updatedTasks = [...tasks, newTask];
+    // Save to Supabase
+    const { data, error } = await supabase.from("tasks").insert([{ text: taskInput }]).select().single();
 
-    setTasks(updatedTasks);
-    localStorage.setItem("tasks", JSON.stringify(updatedTasks));
-
-    onTaskAdd(newTask); // Notify parent component that a task was added
-    setTaskInput(""); // Clear input
+    if (!error && data) {
+      setTasks((prev) => [data, ...prev]); // ✅ Update the UI state instantly
+      setTaskInput(""); // Clear input field
+    }
   };
 
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">📝 Tasks</h2>
-
-      {/* Task Input Field */}
       <div className="flex gap-2 mb-4">
         <input
           type="text"
@@ -54,14 +50,9 @@ export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) {
         </button>
       </div>
 
-      {/* Task List */}
       <ul className="space-y-2">
         {tasks.map((task) => (
-          <li
-            key={task.id}
-            className="p-2 rounded bg-gray-700 cursor-pointer hover:bg-gray-600"
-            onClick={() => onTaskSelect(task)} // ✅ Allow task selection for Pomodoro
-          >
+          <li key={task.id} className="p-2 rounded bg-gray-700 cursor-pointer hover:bg-gray-600" onClick={() => onTaskSelect(task)}>
             {task.text}
           </li>
         ))}
