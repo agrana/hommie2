@@ -47,12 +47,11 @@ export default function Notes() {
       {/* ✅ Fix: Remove preview mode inside editor */}
       <MDEditor 
         value={content} 
-        onChange={setContent} 
+        onChange={(value = "") => setContent(value)} // ✅ Ensure default empty string
         className="bg-gray-900 text-white" 
         height={200} 
         preview="edit" // ✅ No preview inside editor
-      />
-
+      /> 
       <button className="mt-4 bg-blue-500 px-4 py-2 rounded" onClick={saveNote}>Save Note</button>
 
       <div className="mt-4">

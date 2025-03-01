@@ -1,15 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Task } from "@/lib/types";
+import type { Task } from "@/lib/types"; // ✅ Use `import type` to avoid conflicts
 import PomodoroTimer from "@/components/PomodoroTimer";
 import TaskList from "@/components/TaskList";
 import Notes from "@/components/Notes"; // ✅ Add Notes.tsx
-
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
-}
 
 export default function Home() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);

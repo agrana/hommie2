@@ -1,14 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase"; // ✅ Import Supabase client
+import type { Task } from "@/lib/types"; // ✅ Import the shared Task type
 
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
+// ✅ Define correct props for TaskList
+interface TaskListProps {
+  onTaskSelect: (task: Task) => void;
+  onTaskAdd: (newTask: Task) => void; // ✅ Ensure onTaskAdd is included
 }
 
-export default function TaskList({ onTaskSelect }: { onTaskSelect: (task: Task) => void }) {
+export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) { // ✅ Corrected function props
   const [taskInput, setTaskInput] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
 
@@ -31,6 +32,7 @@ export default function TaskList({ onTaskSelect }: { onTaskSelect: (task: Task) 
     if (!error && data) {
       setTasks((prev) => [data, ...prev]); // ✅ Update the UI state instantly
       setTaskInput(""); // Clear input field
+      onTaskAdd(data); // ✅ Notify the parent component about the new task
     }
   };
 

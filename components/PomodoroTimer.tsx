@@ -1,10 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import type { Task } from "@/lib/types"; // ✅ Use the shared Task type
 
-interface Task {
-  id: string;
-  text: string;
-  completed: boolean;
+interface PomodoroTimerProps {
+  selectedTask: Task | null;
 }
 
 export default function PomodoroTimer({ selectedTask }: { selectedTask: Task | null }) {
