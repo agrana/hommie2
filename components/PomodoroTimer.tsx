@@ -28,12 +28,6 @@ export default function PomodoroTimer({ selectedTask }: { selectedTask: Task | n
     };
   }, [isRunning]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-  };
-
   const startPomodoro = () => {
     if (!selectedTask) {
       alert("Please select a task before starting a Pomodoro!");
@@ -42,7 +36,7 @@ export default function PomodoroTimer({ selectedTask }: { selectedTask: Task | n
     setIsRunning(true);
   };
 
-  if (!hydrated) return null; // Prevents SSR mismatch
+  if (!hydrated) return null;
 
   return (
     <div className="bg-gray-800 p-4 rounded w-full">
@@ -52,7 +46,9 @@ export default function PomodoroTimer({ selectedTask }: { selectedTask: Task | n
       ) : (
         <p className="text-gray-400 mb-2">Select a task to start a Pomodoro</p>
       )}
-      <div className="text-5xl font-mono mb-4">{formatTime(timeRemaining)}</div>
+      <div className="text-5xl font-mono mb-4">{`${Math.floor(timeRemaining / 60)}:${String(
+        timeRemaining % 60
+      ).padStart(2, "0")}`}</div>
       <div className="flex space-x-2">
         <button className="bg-green-500 px-4 py-2 rounded" onClick={startPomodoro}>
           Start
