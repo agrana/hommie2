@@ -57,6 +57,7 @@ export default function Notes() {
         preview="edit"
       />
 
+
       {/* Save Button */}
       <button className="mt-4 bg-blue-500 px-4 py-2 rounded" onClick={saveNote}>
         Save Note
