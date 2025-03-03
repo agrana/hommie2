@@ -1,37 +1,59 @@
 "use client";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // ✅ Import Supabase client
-import type { Task } from "@/lib/types"; // ✅ Import the shared Task type
+import { supabase } from "@/lib/supabase";
+import type { Task } from "@/lib/types";
 
-// ✅ Define correct props for TaskList
 interface TaskListProps {
   onTaskSelect: (task: Task) => void;
-  onTaskAdd: (newTask: Task) => void; // ✅ Ensure onTaskAdd is included
+  onTaskAdd: (newTask: Task) => void;
 }
 
-export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) { // ✅ Corrected function props
+export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) {
   const [taskInput, setTaskInput] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
 
   // ✅ Fetch tasks from Supabase on mount
   useEffect(() => {
     async function fetchTasks() {
-      const { data, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (!error) setTasks(data || []);
     }
     fetchTasks();
   }, []);
 
+  // ✅ Toggle task completion
+  const toggleTaskCompletion = async (task: Task) => {
+    const updatedTask = { ...task, completed: !task.completed };
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ completed: updatedTask.completed })
+      .eq("id", task.id);
+
+    if (!error) {
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? updatedTask : t))
+      );
+    }
+  };
+
   // ✅ Add a new task and update UI immediately
   const addTask = async () => {
     if (!taskInput.trim()) return;
 
-    // Save to Supabase
-    const { data, error } = await supabase.from("tasks").insert([{ text: taskInput }]).select().single();
+    const { data, error } = await supabase
+      .from("tasks")
+      .insert([{ text: taskInput, completed: false, focus_time: 0 }])
+      .select()
+      .single();
 
     if (!error && data) {
-      setTasks((prev) => [data, ...prev]); // ✅ Update the UI state instantly
-      setTaskInput(""); // Clear input field
+      setTasks((prev) => [data, ...prev]); // ✅ Add task to the list instantly
+      setTaskInput(""); // ✅ Clear input field
       onTaskAdd(data); // ✅ Notify the parent component about the new task
     }
   };
@@ -54,8 +76,34 @@ export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) { /
 
       <ul className="space-y-2">
         {tasks.map((task) => (
-          <li key={task.id} className="p-2 rounded bg-gray-700 cursor-pointer hover:bg-gray-600" onClick={() => onTaskSelect(task)}>
-            {task.text}
+          <li
+            key={task.id}
+            className={`p-2 flex items-center justify-between bg-gray-700 rounded cursor-pointer hover:bg-gray-600 ${
+              task.completed ? "line-through text-gray-400" : ""
+            }`}
+            onClick={() => {
+              console.log("Task Selected:", task); // ✅ Debugging log
+              onTaskSelect(task); // ✅ Ensure clicking anywhere selects the task
+            }}
+          >
+            <div className="flex items-center gap-2">
+              {/* ✅ Checkbox to mark completion */}
+              <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={(e) => {
+                  e.stopPropagation(); // ✅ Prevents checkbox from also selecting task
+                  toggleTaskCompletion(task);
+                }}
+                className="cursor-pointer"
+              />
+              {/* ✅ Text will still be strikethrough if completed */}
+              <span>{task.text}</span>
+            </div>
+            {/* ✅ Show total Pomodoro time spent */}
+            <span className="text-sm text-gray-300">
+              ⏳ {task.focus_time} min
+            </span>
           </li>
         ))}
       </ul>
