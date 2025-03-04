@@ -14,17 +14,19 @@ export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) {
 
   // ✅ Fetch tasks from Supabase on mount
   useEffect(() => {
-    async function fetchTasks() {
-      const { data, error } = await supabase
-        .from("tasks")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (!error) setTasks(data || []);
-    }
-    fetchTasks();
+    const interval = setInterval(() => {
+      async function fetchTasks() {
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .order("created_at", { ascending: false });
+  
+        if (!error) setTasks(data || []);
+      }
+      fetchTasks();
+    }, 1000); // ✅ Refresh every second
+    return () => clearInterval(interval);
   }, []);
-
   // ✅ Toggle task completion
   const toggleTaskCompletion = async (task: Task) => {
     const updatedTask = { ...task, completed: !task.completed };
