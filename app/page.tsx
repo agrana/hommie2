@@ -22,7 +22,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-center p-6">
-      <h1 className="text-2xl font-bold mb-6">🚀 Pomodoro Productivity App</h1>
+      <h1 className="text-2xl font-bold mb-6">🚀 Scratch Pad</h1>
 
       <div className="grid grid-cols-12 gap-6 w-full max-w-7xl">
         <div className="bg-gray-800 p-4 rounded col-span-8">

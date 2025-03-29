@@ -52,7 +52,7 @@ export default function Notes() {
 
   return (
     <div className="bg-gray-800 p-4 rounded w-full">
-      <h2 className="text-lg font-semibold mb-2">📝 Markdown Notes</h2>
+      <h2 className="text-lg font-semibold mb-2">📝 Notes</h2>
       
       {/* ✅ Fix: Remove preview mode inside editor */}
       <MDEditor 

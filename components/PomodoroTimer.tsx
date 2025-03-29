@@ -82,7 +82,7 @@ export default function PomodoroTimer({ selectedTask, updateTaskFocusTime }: Pom
     };
   return (
     <div>
-      <h2 className="text-lg font-semibold">⏳ Pomodoro Timer</h2>
+      <h2 className="text-lg font-semibold">⏳ Task Timer</h2>
       <p>
         <strong>Current Task:</strong> {selectedTask ? selectedTask.text : "❗ Select a task before starting Pomodoro"}
       </p>
