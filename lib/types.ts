@@ -1,7 +1,8 @@
 export interface Task {
-    id: string; // ✅ Ensure it's a string (UUID from Supabase)
+    id: string;
     text: string;
     completed: boolean;
     focus_time: number;
+    seconds: number;
   }
 export {}; // ✅ Ensures TypeScript recognizes this as a module

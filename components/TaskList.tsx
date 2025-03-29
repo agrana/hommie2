@@ -6,63 +6,57 @@ import type { Task } from "@/lib/types";
 interface TaskListProps {
   onTaskSelect: (task: Task) => void;
   onTaskAdd: (newTask: Task) => void;
+  selectedTask: Task | null;
+  isPomodoroRunning: boolean;
 }
 
-export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) {
-  const [taskInput, setTaskInput] = useState("");
+export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomodoroRunning }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskInput, setTaskInput] = useState(""); // ✅ Ensure task input is present
 
-  // ✅ Fetch tasks from Supabase on mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      async function fetchTasks() {
-        const { data, error } = await supabase
-          .from("tasks")
-          .select("*")
-          .order("created_at", { ascending: false });
-  
-        if (!error) setTasks(data || []);
-      }
-      fetchTasks();
-    }, 1000); // ✅ Refresh every second
-    return () => clearInterval(interval);
+    async function fetchTasks() {
+      const { data, error } = await supabase
+        .from("tasks")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (!error) setTasks(data || []);
+    }
+    fetchTasks();
   }, []);
-  // ✅ Toggle task completion
-  const toggleTaskCompletion = async (task: Task) => {
-    const updatedTask = { ...task, completed: !task.completed };
 
-    const { error } = await supabase
-      .from("tasks")
-      .update({ completed: updatedTask.completed })
-      .eq("id", task.id);
+  // ✅ Update UI `focus_time` every second for the selected task
+  useEffect(() => {
+    if (!isPomodoroRunning || !selectedTask) return;
 
-    if (!error) {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? updatedTask : t))
+    const interval = setInterval(() => {
+      setTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.id === selectedTask.id
+            ? { ...task, focus_time: task.focus_time + 1 } // ✅ Increase `focus_time` every second
+            : task
+        )
       );
-    }
-  };
+    }, 1000);
 
-  // ✅ Add a new task and update UI immediately
-  const addTask = async () => {
-    if (!taskInput.trim()) return;
+    return () => clearInterval(interval);
+  }, [isPomodoroRunning, selectedTask]);
 
-    const { data, error } = await supabase
-      .from("tasks")
-      .insert([{ text: taskInput, completed: false, focus_time: 0 }])
-      .select()
-      .single();
-
-    if (!error && data) {
-      setTasks((prev) => [data, ...prev]); // ✅ Add task to the list instantly
-      setTaskInput(""); // ✅ Clear input field
-      onTaskAdd(data); // ✅ Notify the parent component about the new task
-    }
+  // ✅ Function to format `focus_time`
+  const formatFocusTime = (seconds: number) => {
+    if (seconds < 60) return `${seconds}s`; // ✅ Show seconds if < 1 min
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${minutes}m`;
   };
 
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">📝 Tasks</h2>
+
+      {/* ✅ Ensure the task input box is present */}
       <div className="flex gap-2 mb-4">
         <input
           type="text"
@@ -71,40 +65,64 @@ export default function TaskList({ onTaskSelect, onTaskAdd }: TaskListProps) {
           className="p-2 bg-gray-700 rounded w-full"
           placeholder="New task..."
         />
-        <button className="bg-blue-500 px-4 py-2 rounded" onClick={addTask}>
-          Add Task
-        </button>
+       <button 
+    className="bg-blue-500 px-4 py-2 rounded" 
+    onClick={async () => {
+      if (!taskInput.trim()) return;
+    
+      try {
+        const { data: insertData, error: insertError } = await supabase
+          .from("tasks")
+          .insert([
+            {
+              text: taskInput,
+              completed: false,
+              focus_time: 0,
+            },
+          ])
+          .select();
+    
+        console.log("🧪 Insert result:", insertData, insertError);
+    
+        if (insertError) {
+          console.error("❌ Supabase insert error:", insertError);
+          return;
+        }
+    
+        if (!Array.isArray(insertData) || insertData.length === 0) {
+          console.warn("⚠️ Supabase insert returned no rows");
+          return;
+        }
+    
+        const savedTask = {
+          ...insertData[0],
+          seconds: 0,
+        };
+    
+        setTasks((prev) => [savedTask, ...prev]);
+        onTaskAdd(savedTask);
+        setTaskInput("");
+      } catch (err) {
+        console.error("💥 Uncaught save error:", err);
+      }
+    }}
+    >Add</button> 
       </div>
 
       <ul className="space-y-2">
         {tasks.map((task) => (
           <li
             key={task.id}
-            className={`p-2 flex items-center justify-between bg-gray-700 rounded cursor-pointer hover:bg-gray-600 ${
-              task.completed ? "line-through text-gray-400" : ""
-            }`}
-            onClick={() => {
-              console.log("Task Selected:", task); // ✅ Debugging log
-              onTaskSelect(task); // ✅ Ensure clicking anywhere selects the task
-            }}
+            className="p-2 flex items-center justify-between bg-gray-700 rounded cursor-pointer hover:bg-gray-600"
+            onClick={() => onTaskSelect(task)}
           >
             <div className="flex items-center gap-2">
-              {/* ✅ Checkbox to mark completion */}
-              <input
-                type="checkbox"
-                checked={task.completed}
-                onChange={(e) => {
-                  e.stopPropagation(); // ✅ Prevents checkbox from also selecting task
-                  toggleTaskCompletion(task);
-                }}
-                className="cursor-pointer"
-              />
-              {/* ✅ Text will still be strikethrough if completed */}
+              <input type="checkbox" checked={task.completed} className="cursor-pointer" />
               <span>{task.text}</span>
             </div>
-            {/* ✅ Show total Pomodoro time spent */}
+            {/* ✅ Show formatted `focus_time` */}
             <span className="text-sm text-gray-300">
-              ⏳ {task.focus_time} min
+              ⏳ {formatFocusTime(task.focus_time)}
             </span>
           </li>
         ))}
