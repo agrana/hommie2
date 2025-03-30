@@ -12,7 +12,7 @@ interface TaskListProps {
 
 export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomodoroRunning }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [taskInput, setTaskInput] = useState(""); // ✅ Ensure task input is present
+  const [taskInput, setTaskInput] = useState("");
 
   useEffect(() => {
     async function fetchTasks() {
@@ -26,7 +26,7 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
     fetchTasks();
   }, []);
 
-  // ✅ Update UI `focus_time` every second for the selected task
+  // Update UI `focus_time` every second for the selected task
   useEffect(() => {
     if (!isPomodoroRunning || !selectedTask) return;
 

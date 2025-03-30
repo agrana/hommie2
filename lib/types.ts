@@ -5,4 +5,4 @@ export interface Task {
     focus_time: number;
     seconds: number;
   }
-export {}; // ✅ Ensures TypeScript recognizes this as a module
+export {};

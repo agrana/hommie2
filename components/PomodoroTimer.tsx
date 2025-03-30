@@ -8,12 +8,12 @@ interface PomodoroTimerProps {
   setIsPomodoroRunning: (running: boolean) => void;
 }
 
+
 export default function PomodoroTimer({ selectedTask, updateTaskFocusTime }: PomodoroTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [lastUpdate, setLastUpdate] = useState(Date.now());
 
-  // ✅ Load saved timer state from localStorage
   useEffect(() => {
     const savedTime = localStorage.getItem("pomodoroTimeRemaining");
     const savedRunningState = localStorage.getItem("pomodoroIsRunning");
@@ -27,9 +27,6 @@ export default function PomodoroTimer({ selectedTask, updateTaskFocusTime }: Pom
     }
   }, []);
   
-
-  // ✅ Save timer state when changes occur
-  // Update focus time
 
   useEffect(() => {
     localStorage.setItem("pomodoroTimeRemaining", String(timeRemaining));
@@ -54,7 +51,7 @@ export default function PomodoroTimer({ selectedTask, updateTaskFocusTime }: Pom
               alert("🍅 Time's up! Take a break.");
               return 25 * 60; // 🔁 Reset after completion
             }
-  
+
             updateFocusTime(selectedTask, elapsedSeconds);
             setLastUpdate(now);
             return newTime;
