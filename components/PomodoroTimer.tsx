@@ -27,7 +27,10 @@ export default function PomodoroTimer({ selectedTask, updateTaskFocusTime }: Pom
     }
   }, []);
   
+
   // ✅ Save timer state when changes occur
+  // Update focus time
+
   useEffect(() => {
     localStorage.setItem("pomodoroTimeRemaining", String(timeRemaining));
     localStorage.setItem("pomodoroIsRunning", String(isRunning));
@@ -35,37 +38,48 @@ export default function PomodoroTimer({ selectedTask, updateTaskFocusTime }: Pom
   }, [timeRemaining, isRunning]);
   // ✅ Track time in the background
   useEffect(() => {
-  let timer: NodeJS.Timeout;
-
-  if (isRunning && selectedTask) {
-    const updateTime = () => {
-      const now = Date.now();
-      const elapsedSeconds = Math.floor((now - lastUpdate) / 1000);
-      if (elapsedSeconds > 0) {
-        setTimeRemaining((prev) => Math.max(prev - elapsedSeconds, 0));
-        updateFocusTime(selectedTask, elapsedSeconds); // ✅ Now updating `focus_time` dynamically every second
-        setLastUpdate(now);
-      }
-    };
-
-    // ✅ Update timer and `focus_time` every second
-    timer = setInterval(updateTime, 1000);
-
-    // ✅ Handle when the tab becomes hidden or active
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        updateTime(); // ✅ Compensate for time lost while tab was hidden
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }
+    let timer: NodeJS.Timeout;
+  
+    if (isRunning && selectedTask) {
+      const updateTime = () => {
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - lastUpdate) / 1000);
+  
+        if (elapsedSeconds > 0) {
+          setTimeRemaining((prev) => {
+            const newTime = Math.max(prev - elapsedSeconds, 0);
+  
+            if (newTime === 0) {
+              setIsRunning(false);
+              alert("🍅 Time's up! Take a break.");
+              return 25 * 60; // 🔁 Reset after completion
+            }
+  
+            updateFocusTime(selectedTask, elapsedSeconds);
+            setLastUpdate(now);
+            return newTime;
+          });
+        }
+      };
+  
+      timer = setInterval(updateTime, 1000);
+  
+      const handleVisibilityChange = () => {
+        if (!document.hidden) {
+          updateTime();
+        }
+      };
+  
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+  
+      return () => {
+        clearInterval(timer);
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      };
+    }
   }, [isRunning, selectedTask, lastUpdate]);
+  
+  
   const updateFocusTime = async (task: Task, seconds: number) => {
     console.log(`🔄 Attempting to increment focus_time for "${task.text}" by ${seconds}s in Supabase`);
   
