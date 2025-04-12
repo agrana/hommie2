@@ -9,9 +9,9 @@ import { supabase } from "@/lib/supabase";
 export default function Home() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isPomodoroRunning, setIsPomodoroRunning] = useState(false); // ✅ New state to track Pomodoro running
+  const [isPomodoroRunning, setIsPomodoroRunning] = useState(false); // New state to track Pomodoro running
 
-  // ✅ Function to update focus time in UI
+  // Function to update focus time in UI
   const updateTaskFocusTime = (taskId: string, newFocusTime: number) => {
     setTasks((prevTasks) =>
       prevTasks.map((task) =>
@@ -30,7 +30,7 @@ export default function Home() {
         </div>
 
         <div className="col-span-4 flex flex-col gap-6">
-          {/* ✅ Pass `setIsPomodoroRunning` to track Pomodoro state */}
+          {/* Pass `setIsPomodoroRunning` to track Pomodoro state */}
           <div className="bg-gray-800 p-4 rounded">
             <PomodoroTimer
               selectedTask={selectedTask}
@@ -39,7 +39,7 @@ export default function Home() {
             />
           </div>
 
-          {/* ✅ Pass `selectedTask` and `isPomodoroRunning` */}
+          {/* Pass `selectedTask` and `isPomodoroRunning` */}
           <div className="bg-gray-800 p-4 rounded">
             <TaskList
               onTaskSelect={setSelectedTask}
