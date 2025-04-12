@@ -19,13 +19,15 @@ export default function TaskList({
 }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskInput, setTaskInput] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editedText, setEditedText] = useState("");
 
   useEffect(() => {
     async function fetchTasks() {
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
-        .eq("deleted", false) // Only fetch non-deleted tasks
+        .eq("deleted", false)
         .order("created_at", { ascending: false });
 
       if (!error) setTasks(data || []);
@@ -57,6 +59,28 @@ export default function TaskList({
     return hours > 0 ? `${hours}h ${remainingMinutes}m` : `${minutes}m`;
   };
 
+  const handleUpdateText = async (taskId: string, newText: string) => {
+    const trimmed = newText.trim();
+    if (!trimmed) return;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ text: trimmed })
+      .eq("id", taskId);
+
+    if (error) {
+      console.error("📝 Error updating task text:", error);
+      return;
+    }
+
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, text: trimmed } : task
+      )
+    );
+    setEditingTaskId(null);
+  };
+
   return (
     <div>
       <h2 className="text-lg font-semibold mb-2">📝 Tasks</h2>
@@ -86,8 +110,6 @@ export default function TaskList({
                   },
                 ])
                 .select();
-
-              console.log("🧪 Insert result:", insertData, insertError);
 
               if (insertError) {
                 console.error("❌ Supabase insert error:", insertError);
@@ -122,17 +144,43 @@ export default function TaskList({
             key={task.id}
             className="p-2 flex items-center justify-between bg-gray-700 rounded cursor-pointer hover:bg-gray-600"
           >
-            <div
-              className="flex items-center gap-2"
-              onClick={() => onTaskSelect(task)}
-            >
+            <div className="flex items-center gap-2" onClick={() => onTaskSelect(task)}>
               <input
                 type="checkbox"
                 checked={task.completed}
                 className="cursor-pointer"
                 readOnly
               />
-              <span>{task.text}</span>
+              {editingTaskId === task.id ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  onBlur={async () => {
+                    await handleUpdateText(task.id, editedText);
+                  }}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      await handleUpdateText(task.id, editedText);
+                    } else if (e.key === "Escape") {
+                      setEditingTaskId(null);
+                    }
+                  }}
+                  className="bg-gray-800 text-white px-1 py-0.5 rounded w-full"
+                />
+              ) : (
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingTaskId(task.id);
+                    setEditedText(task.text);
+                  }}
+                  className="cursor-text"
+                >
+                  {task.text}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-300">
