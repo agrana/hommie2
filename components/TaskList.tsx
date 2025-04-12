@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import type { Task } from "@/lib/types";
+import { Trash2 } from "lucide-react";
 
 interface TaskListProps {
   onTaskSelect: (task: Task) => void;
@@ -10,7 +11,12 @@ interface TaskListProps {
   isPomodoroRunning: boolean;
 }
 
-export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomodoroRunning }: TaskListProps) {
+export default function TaskList({
+  onTaskSelect,
+  onTaskAdd,
+  selectedTask,
+  isPomodoroRunning,
+}: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [taskInput, setTaskInput] = useState("");
 
@@ -19,6 +25,7 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
       const { data, error } = await supabase
         .from("tasks")
         .select("*")
+        .eq("deleted", false) // Only fetch non-deleted tasks
         .order("created_at", { ascending: false });
 
       if (!error) setTasks(data || []);
@@ -26,7 +33,6 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
     fetchTasks();
   }, []);
 
-  // Update UI `focus_time` every second for the selected task
   useEffect(() => {
     if (!isPomodoroRunning || !selectedTask) return;
 
@@ -34,7 +40,7 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
           task.id === selectedTask.id
-            ? { ...task, focus_time: task.focus_time + 1 } // ✅ Increase `focus_time` every second
+            ? { ...task, focus_time: task.focus_time + 1 }
             : task
         )
       );
@@ -43,9 +49,8 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
     return () => clearInterval(interval);
   }, [isPomodoroRunning, selectedTask]);
 
-  // ✅ Function to format `focus_time`
   const formatFocusTime = (seconds: number) => {
-    if (seconds < 60) return `${seconds}s`; // ✅ Show seconds if < 1 min
+    if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
@@ -56,7 +61,6 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
     <div>
       <h2 className="text-lg font-semibold mb-2">📝 Tasks</h2>
 
-      {/* ✅ Ensure the task input box is present */}
       <div className="flex gap-2 mb-4">
         <input
           type="text"
@@ -65,48 +69,51 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
           className="p-2 bg-gray-700 rounded w-full"
           placeholder="New task..."
         />
-       <button 
-    className="bg-blue-500 px-4 py-2 rounded" 
-    onClick={async () => {
-      if (!taskInput.trim()) return;
-    
-      try {
-        const { data: insertData, error: insertError } = await supabase
-          .from("tasks")
-          .insert([
-            {
-              text: taskInput,
-              completed: false,
-              focus_time: 0,
-            },
-          ])
-          .select();
-    
-        console.log("🧪 Insert result:", insertData, insertError);
-    
-        if (insertError) {
-          console.error("❌ Supabase insert error:", insertError);
-          return;
-        }
-    
-        if (!Array.isArray(insertData) || insertData.length === 0) {
-          console.warn("⚠️ Supabase insert returned no rows");
-          return;
-        }
-    
-        const savedTask = {
-          ...insertData[0],
-          seconds: 0,
-        };
-    
-        setTasks((prev) => [savedTask, ...prev]);
-        onTaskAdd(savedTask);
-        setTaskInput("");
-      } catch (err) {
-        console.error("💥 Uncaught save error:", err);
-      }
-    }}
-    >Add</button> 
+        <button
+          className="bg-blue-500 px-4 py-2 rounded"
+          onClick={async () => {
+            if (!taskInput.trim()) return;
+
+            try {
+              const { data: insertData, error: insertError } = await supabase
+                .from("tasks")
+                .insert([
+                  {
+                    text: taskInput,
+                    completed: false,
+                    focus_time: 0,
+                    deleted: false,
+                  },
+                ])
+                .select();
+
+              console.log("🧪 Insert result:", insertData, insertError);
+
+              if (insertError) {
+                console.error("❌ Supabase insert error:", insertError);
+                return;
+              }
+
+              if (!Array.isArray(insertData) || insertData.length === 0) {
+                console.warn("⚠️ Supabase insert returned no rows");
+                return;
+              }
+
+              const savedTask = {
+                ...insertData[0],
+                seconds: 0,
+              };
+
+              setTasks((prev) => [savedTask, ...prev]);
+              onTaskAdd(savedTask);
+              setTaskInput("");
+            } catch (err) {
+              console.error("💥 Uncaught save error:", err);
+            }
+          }}
+        >
+          Add
+        </button>
       </div>
 
       <ul className="space-y-2">
@@ -114,16 +121,43 @@ export default function TaskList({ onTaskSelect, onTaskAdd, selectedTask, isPomo
           <li
             key={task.id}
             className="p-2 flex items-center justify-between bg-gray-700 rounded cursor-pointer hover:bg-gray-600"
-            onClick={() => onTaskSelect(task)}
           >
-            <div className="flex items-center gap-2">
-              <input type="checkbox" checked={task.completed} className="cursor-pointer" />
+            <div
+              className="flex items-center gap-2"
+              onClick={() => onTaskSelect(task)}
+            >
+              <input
+                type="checkbox"
+                checked={task.completed}
+                className="cursor-pointer"
+                readOnly
+              />
               <span>{task.text}</span>
             </div>
-            {/* ✅ Show formatted `focus_time` */}
-            <span className="text-sm text-gray-300">
-              ⏳ {formatFocusTime(task.focus_time)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-300">
+                ⏳ {formatFocusTime(task.focus_time)}
+              </span>
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const { error } = await supabase
+                    .from("tasks")
+                    .update({ deleted: true })
+                    .eq("id", task.id);
+
+                  if (error) {
+                    console.error("🗑️ Error deleting task:", error);
+                    return;
+                  }
+
+                  setTasks((prev) => prev.filter((t) => t.id !== task.id));
+                }}
+                className="text-gray-400 hover:text-red-500"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </li>
         ))}
       </ul>
